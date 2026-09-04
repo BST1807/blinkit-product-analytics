@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables and secrets
+.env
+
+# Generated data
+data/raw/
+data/processed/
+
+# Database files
+*.db
+
+# IDE settings
+.vscode/
+
+# Power BI temporary files
+*.pbix.user
