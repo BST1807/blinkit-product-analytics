@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blinkit Product Analytics & Marketplace Monitoring Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --bg-card-hover: #222d44;
+            --border: #26334d;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-yellow: #f8cb46;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #111827 0%, #1a2234 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-blinkit {
+            background-color: var(--accent-yellow);
+            color: #000;
+            font-weight: 800;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .pipeline-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        nav.tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            gap: 24px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 14px 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-yellow);
+            border-bottom: 2px solid var(--accent-yellow);
+            font-weight: 600;
+        }
+
+        main {
+            padding: 24px 32px;
+            flex: 1;
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            background: var(--bg-secondary);
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        select, input {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-yellow);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(248, 203, 70, 0.4);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .kpi-card.yellow::before { background: var(--accent-yellow); }
+        .kpi-card.green::before { background: var(--accent-green); }
+        .kpi-card.red::before { background: var(--accent-red); }
+        .kpi-card.blue::before { background: var(--accent-blue); }
+        .kpi-card.purple::before { background: var(--accent-purple); }
+
+        .kpi-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kpi-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .chart-header span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+            width: 100%;
+        }
+
+        .data-table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(38, 51, 77, 0.4);
+            color: var(--text-primary);
+        }
+
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-instock {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-oos {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-lowstock {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-highrisk {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            font-weight: 700;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 16px 32px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">
+            <span class="badge-blinkit">blinkit</span>
+            <div class="header-title">
+                <h1>Marketplace Monitoring & Product Analytics</h1>
+                <p>128 SKUs Across 3 Categories & 6 Subcategories | Dual-Mode MySQL & SQLite Engine</p>
+            </div>
+        </div>
+        <div class="pipeline-status">
+            <div class="status-dot"></div>
+            <span>Telemetry Active: T1, T2, T3 Snapshots Loaded</span>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('overview')">1. Executive Overview</button>
+        <button class="tab-btn" onclick="switchTab('stockout')">2. Stock-Out & Availability Layer</button>
+        <button class="tab-btn" onclick="switchTab('pricing')">3. Pricing & Discount Depth</button>
+        <button class="tab-btn" onclick="switchTab('brand')">4. Brand Assortment (HHI)</button>
+    </nav>
+
+    <main>
+        <!-- Tab 1: Executive Overview -->
+        <div id="tab-overview" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card yellow">
+                    <div class="kpi-title">Total SKUs Monitored</div>
+                    <div class="kpi-value" id="kpi-total-skus">128</div>
+                    <div class="kpi-subtitle">Across 3 core categories</div>
+                </div>
+                <div class="kpi-card green">
+                    <div class="kpi-title">Active Brands</div>
+                    <div class="kpi-value" id="kpi-brands">52</div>
+                    <div class="kpi-subtitle">6 competitive subcategories</div>
+                </div>
+                <div class="kpi-card red">
+                    <div class="kpi-title">Stock-Out Rate</div>
+                    <div class="kpi-value" id="kpi-oos-rate">7.03%</div>
+                    <div class="kpi-subtitle">9 SKUs currently unavailable</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-title">Avg Selling Price</div>
+                    <div class="kpi-value" id="kpi-avg-price">₹51.36</div>
+                    <div class="kpi-subtitle">Average MRP: ₹54.76</div>
+                </div>
+                <div class="kpi-card purple">
+                    <div class="kpi-title">Avg Discount Depth</div>
+                    <div class="kpi-value" id="kpi-avg-discount">6.21%</div>
+                    <div class="kpi-subtitle">Max discount: 18.75%</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Catalog Assortment by Category</h3>
+                        <span>SKU Distribution</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Stock-Out Rate % by Category</h3>
+                        <span>Current Availability Health</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="stockoutCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table-card">
+                <div class="chart-header">
+                    <h3>Subcategory Performance Benchmark</h3>
+                    <span>Consolidated Metrics</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Total SKUs</th>
+                            <th>Brand Count</th>
+                            <th>Avg Price</th>
+                            <th>Avg Rating</th>
+                            <th>Avg Discount %</th>
+                            <th>Stock-Out Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subcat-table-body">
+                        <tr><td>Dairy, Bread & Eggs</td><td>Milk & Cream</td><td>38</td><td>9</td><td>₹49.45</td><td>4.56 ★</td><td>1.48%</td><td><span class="status-badge badge-oos">13.16%</span></td></tr>
+                        <tr><td>Dairy, Bread & Eggs</td><td>Bread & Bakery</td><td>18</td><td>5</td><td>₹52.61</td><td>4.42 ★</td><td>7.22%</td><td><span class="status-badge badge-instock">0.00%</span></td></tr>
+                        <tr><td>Snacks & Munchies</td><td>Chips & Crisps</td><td>18</td><td>10</td><td>₹37.83</td><td>4.54 ★</td><td>6.54%</td><td><span class="status-badge badge-lowstock">5.56%</span></td></tr>
+                        <tr><td>Snacks & Munchies</td><td>Biscuits & Cookies</td><td>18</td><td>7</td><td>₹44.06</td><td>4.56 ★</td><td>10.85%</td><td><span class="status-badge badge-instock">0.00%</span></td></tr>
+                        <tr><td>Cold Drinks & Juices</td><td>Soft Drinks & Sodas</td><td>18</td><td>13</td><td>₹47.33</td><td>4.56 ★</td><td>4.73%</td><td><span class="status-badge badge-lowstock">5.56%</span></td></tr>
+                        <tr><td>Cold Drinks & Juices</td><td>Juices & Fruit Drinks</td><td>18</td><td>10</td><td>₹79.00</td><td>4.57 ★</td><td>11.70%</td><td><span class="status-badge badge-oos">11.11%</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Stock-Out Monitoring Layer -->
+        <div id="tab-stockout" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card green">
+                    <div class="kpi-title">In-Stock SKUs</div>
+                    <div class="kpi-value">119</div>
+                    <div class="kpi-subtitle">92.97% catalog ready</div>
+                </div>
+                <div class="kpi-card red">
+                    <div class="kpi-title">Out-of-Stock SKUs</div>
+                    <div class="kpi-value">9</div>
+                    <div class="kpi-subtitle">Direct revenue leakage</div>
+                </div>
+                <div class="kpi-card yellow">
+                    <div class="kpi-title">High Recurring Risk SKUs</div>
+                    <div class="kpi-value">8</div>
+                    <div class="kpi-subtitle">OOS in ≥50% snapshots</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Stock-Out Trajectory Over Time</h3>
+                        <span>Tracking T1 (Day 1) → T2 (Day 2) → T3 (Day 3)</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Stock-Out Incidence by Brand</h3>
+                        <span>Top Brands with Availability Risk</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="brandOosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table-card">
+                <div class="chart-header">
+                    <h3>Chronic Recurring Stock-Out SKUs (Time-Aware Monitoring)</h3>
+                    <span>Surfacing items with persistent stockout risk across snapshots</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Snapshots Monitored</th>
+                            <th>OOS Count</th>
+                            <th>OOS Risk %</th>
+                            <th>Risk Classification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Yakult Light Probiotic Drink</td><td>Yakult</td><td>Dairy, Bread & Eggs</td><td>Milk & Cream</td><td>5</td><td>5</td><td>100.0%</td><td><span class="status-badge badge-highrisk">CHRONIC RISK</span></td></tr>
+                        <tr><td>Amul Calci+ Calcium Rich Milk</td><td>Amul</td><td>Dairy, Bread & Eggs</td><td>Milk & Cream</td><td>5</td><td>5</td><td>100.0%</td><td><span class="status-badge badge-highrisk">CHRONIC RISK</span></td></tr>
+                        <tr><td>Amul Gold Full Cream Fresh Milk</td><td>Amul</td><td>Dairy, Bread & Eggs</td><td>Milk & Cream</td><td>3</td><td>2</td><td>66.7%</td><td><span class="status-badge badge-highrisk">HIGH RISK</span></td></tr>
+                        <tr><td>Lay's India's Magic Masala Chips</td><td>Lay's</td><td>Snacks & Munchies</td><td>Chips & Crisps</td><td>3</td><td>2</td><td>66.7%</td><td><span class="status-badge badge-highrisk">HIGH RISK</span></td></tr>
+                        <tr><td>Coca-Cola Original Taste Bottle</td><td>Coca-Cola</td><td>Cold Drinks & Juices</td><td>Soft Drinks & Sodas</td><td>3</td><td>2</td><td>66.7%</td><td><span class="status-badge badge-highrisk">HIGH RISK</span></td></tr>
+                        <tr><td>Thums Up Charged Strong Taste</td><td>Thums Up</td><td>Cold Drinks & Juices</td><td>Soft Drinks & Sodas</td><td>3</td><td>2</td><td>66.7%</td><td><span class="status-badge badge-highrisk">HIGH RISK</span></td></tr>
+                        <tr><td>Real Fruit Power Mixed Fruit Juice</td><td>Real</td><td>Cold Drinks & Juices</td><td>Juices & Fruit Drinks</td><td>3</td><td>2</td><td>66.7%</td><td><span class="status-badge badge-highrisk">HIGH RISK</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Pricing & Discount Depth -->
+        <div id="tab-pricing" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Average Discount Depth % by Subcategory</h3>
+                        <span>Promotional Aggressiveness</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="discountChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Price Tier Distribution</h3>
+                        <span>Budget (<₹35) | Mid (₹35-80) | Premium (>₹80)</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="priceTierChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table-card">
+                <div class="chart-header">
+                    <h3>Rating-to-Price Category Norm Divergence</h3>
+                    <span>Surfacing Overpriced Outliers vs High-Value Gems</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Category Avg Price</th>
+                            <th>Price Premium %</th>
+                            <th>Rating</th>
+                            <th>Category Avg Rating</th>
+                            <th>Classification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Nestle A+ Slim Skimmed Milk</td><td>Nestle</td><td>Dairy, Bread & Eggs</td><td>₹103.00</td><td>₹50.46</td><td>+104.1%</td><td>4.30 ★</td><td>4.52 ★</td><td><span class="status-badge badge-oos">Overpriced / Low Sat.</span></td></tr>
+                        <tr><td>Nestle A+ Nourish Toned Milk</td><td>Nestle</td><td>Dairy, Bread & Eggs</td><td>₹98.00</td><td>₹50.46</td><td>+94.2%</td><td>4.45 ★</td><td>4.52 ★</td><td><span class="status-badge badge-oos">Overpriced / Low Sat.</span></td></tr>
+                        <tr><td>Real Fruit Power Alphonso Mango</td><td>Real</td><td>Cold Drinks & Juices</td><td>₹115.00</td><td>₹63.17</td><td>+82.1%</td><td>4.55 ★</td><td>4.56 ★</td><td><span class="status-badge badge-lowstock">Premium Near Norm</span></td></tr>
+                        <tr><td>Tropicana Mixed Fruit Delight</td><td>Tropicana</td><td>Cold Drinks & Juices</td><td>₹110.00</td><td>₹63.17</td><td>+74.1%</td><td>4.48 ★</td><td>4.56 ★</td><td><span class="status-badge badge-oos">Overpriced / Low Sat.</span></td></tr>
+                        <tr><td>Parle-G Original Gluco Biscuits</td><td>Parle</td><td>Snacks & Munchies</td><td>₹24.00</td><td>₹40.94</td><td>-41.4%</td><td>4.80 ★</td><td>4.55 ★</td><td><span class="status-badge badge-instock">High-Value Gem</span></td></tr>
+                        <tr><td>Uncle Chipps Spicy Treat Chips</td><td>Uncle Chipps</td><td>Snacks & Munchies</td><td>₹20.00</td><td>₹40.94</td><td>-51.1%</td><td>4.62 ★</td><td>4.55 ★</td><td><span class="status-badge badge-instock">High-Value Gem</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 4: Brand Assortment & HHI -->
+        <div id="tab-brand" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card purple">
+                    <div class="kpi-title">Highest HHI (Concentrated)</div>
+                    <div class="kpi-value">2,368</div>
+                    <div class="kpi-subtitle">Milk & Cream (Amul dominance)</div>
+                </div>
+                <div class="kpi-card blue">
+                    <div class="kpi-title">Lowest HHI (Competitive)</div>
+                    <div class="kpi-value">926</div>
+                    <div class="kpi-subtitle">Soft Drinks & Sodas (13 brands)</div>
+                </div>
+                <div class="kpi-card yellow">
+                    <div class="kpi-title">Total Competing Brands</div>
+                    <div class="kpi-value">52</div>
+                    <div class="kpi-subtitle">Healthy supplier ecosystem</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Herfindahl-Hirschman Index (HHI) by Subcategory</h3>
+                        <span>HHI &gt; 2500 Concentrated | 1500-2500 Moderate | &lt; 1500 Competitive</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="hhiChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Brand Count per Subcategory</h3>
+                        <span>Assortment Depth</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="brandCountChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div>Blinkit Product Analytics & Marketplace Monitoring | Built by Bhavesh Singh Tomer</div>
+        <div>Tech Stack: Python, Pandas, BeautifulSoup, Playwright, MySQL, SQLite, Power BI</div>
+    </footer>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // Initialize Charts
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Category Chart
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dairy, Bread & Eggs (56 SKUs)', 'Cold Drinks & Juices (36 SKUs)', 'Snacks & Munchies (36 SKUs)'],
+                    datasets: [{
+                        data: [56, 36, 36],
+                        backgroundColor: ['#f8cb46', '#3b82f6', '#10b981'],
+                        borderColor: '#111827',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // 2. Stockout Rate by Category
+            new Chart(document.getElementById('stockoutCategoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Dairy, Bread & Eggs', 'Cold Drinks & Juices', 'Snacks & Munchies'],
+                    datasets: [{
+                        label: 'Stock-Out Rate %',
+                        data: [8.93, 8.33, 2.78],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 3. Stockout Timeline Chart
+            new Chart(document.getElementById('timelineChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Snapshot T1 (Day 1)', 'Snapshot T2 (Day 2 - Demand Surge)', 'Snapshot T3 (Day 3 - Restock)'],
+                    datasets: [{
+                        label: 'Stock-Out Rate %',
+                        data: [1.85, 12.04, 7.03],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 15, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { labels: { color: '#94a3b8' } } }
+                }
+            });
+
+            // 4. Brand OOS Chart
+            new Chart(document.getElementById('brandOosChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Yakult', 'Amul', 'Coca-Cola', 'Thums Up', "Lay's", 'Real'],
+                    datasets: [{
+                        label: 'OOS Incidence Count',
+                        data: [5, 4, 2, 2, 2, 2],
+                        backgroundColor: '#f87171',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 5. Discount Chart
+            new Chart(document.getElementById('discountChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Juices & Fruit Drinks', 'Biscuits & Cookies', 'Bread & Bakery', 'Chips & Crisps', 'Soft Drinks & Sodas', 'Milk & Cream'],
+                    datasets: [{
+                        label: 'Avg Discount %',
+                        data: [11.70, 10.85, 7.22, 6.54, 4.73, 1.48],
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 6. Price Tier Chart
+            new Chart(document.getElementById('priceTierChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Budget (<₹35)', 'Mid-Range (₹35-₹80)', 'Premium (>₹80)'],
+                    datasets: [{
+                        data: [42, 64, 22],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f8cb46'],
+                        borderColor: '#111827',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+                }
+            });
+
+            // 7. HHI Chart
+            new Chart(document.getElementById('hhiChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Milk & Cream', 'Bread & Bakery', 'Biscuits & Cookies', 'Chips & Crisps', 'Juices & Fruit Drinks', 'Soft Drinks & Sodas'],
+                    datasets: [{
+                        label: 'HHI Concentration Index',
+                        data: [2368, 2346, 1852, 1235, 1235, 926],
+                        backgroundColor: ['#f59e0b', '#f59e0b', '#f59e0b', '#10b981', '#10b981', '#10b981'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 2800, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 8. Brand Count Chart
+            new Chart(document.getElementById('brandCountChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Soft Drinks & Sodas', 'Chips & Crisps', 'Juices & Fruit Drinks', 'Milk & Cream', 'Biscuits & Cookies', 'Bread & Bakery'],
+                    datasets: [{
+                        label: 'Unique Brands',
+                        data: [13, 10, 10, 9, 7, 5],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#26334d' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

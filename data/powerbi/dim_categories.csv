@@ -1,0 +1,7 @@
+category_id,category_name,subcategory_id,subcategory_name
+1,"Dairy, Bread & Eggs",11,Milk & Cream
+1,"Dairy, Bread & Eggs",12,Bread & Bakery
+2,Snacks & Munchies,21,Chips & Crisps
+2,Snacks & Munchies,22,Biscuits & Cookies
+3,Cold Drinks & Juices,31,Soft Drinks & Sodas
+3,Cold Drinks & Juices,32,Juices & Fruit Drinks
